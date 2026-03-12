@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestão de O.S. - Terceirizadas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --bg: #002b36;
+            --card: rgba(255, 255, 255, 0.08);
+            --border: #000;
+            --accent: #f47920;
+            --text: #fbfbfb;
+            --success: #00ff6a;
+            --warning: #ffcc00;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background-color: #073642;
+            overflow: hidden;
+        }
+
+        .background {
+            position: fixed;
+            inset: 0;
+            background: url('https://i.imgur.com/GMkHUDl.jpeg') center/cover no-repeat;
+            filter: blur(8px); 
+            transform: scale(1.1);
+            z-index: -2;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+
+        header {
+            height: 110px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 0 25px;
+            background: var(--bg);
+            border-bottom: 3px solid var(--accent);
+            position: relative;
+            z-index: 10;
+        }
+
+        .menu-btn { font-size: 30px; cursor: pointer; color: var(--accent); }
+        .logo { height: 70px; }
+
+        .layout { display: flex; height: calc(100vh - 110px); position: relative; z-index: 5; }
+
+        aside {
+            width: 260px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-right: 2px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: .3s;
+        }
+
+        aside.closed { margin-left: -260px; }
+
+        aside button {
+            padding: 16px;
+            background: var(--card);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text);
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: left;
+            transition: 0.2s;
+        }
+
+        aside button.active, aside button:hover {
+            background: var(--accent);
+            color: #000;
+            font-weight: bold;
+        }
+
+        main { flex: 1; padding: 30px; overflow-y: auto; }
+        .section { display: none; max-width: 1200px; margin: 0 auto; }
+        .section.active { display: block; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            padding: 14px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            color: var(--text);
+            outline: none;
+        }
+
+        button.primary {
+            padding: 16px 40px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        th, td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; }
+        th { background: rgba(0, 0, 0, 0.8); color: var(--accent); font-size: 13px; }
+
+        /* Estilos de Status */
+        .badge {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-ABERTO { background: var(--warning); color: #000; }
+        .status-FINALIZADO { background: var(--success); color: #000; }
+
+        .btn-action {
+            padding: 6px;
+            margin-right: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid;
+            background: transparent;
+        }
+        .btn-finish { border-color: var(--success); color: var(--success); }
+        .btn-finish:hover { background: var(--success); color: #000; }
+        .btn-del { border-color: #ff4d4d; color: #ff4d4d; }
+        .btn-del:hover { background: #ff4d4d; color: #fff; }
+
+    </style>
+</head>
+
+<body>
+
+<div class="background"></div>
+<div class="overlay"></div>
+
+<header>
+    <div class="menu-btn" onclick="toggleMenu()">☰</div>
+    <div style="font-size: 20px; font-weight: bold; color: var(--accent);">GESTOR O.S. PRO</div>
+</header>
+
+<div class="layout">
+    <aside id="menu" class="closed">
+        <button class="active" onclick="mostrar('pesquisa', this)">🔍 Consultar O.S.</button>
+        <button onclick="mostrar('cadastro', this)">➕ Nova O.S.</button>
+    </aside>
+
+    <main>
+        <section id="pesquisa" class="section active">
+            <div class="form-grid">
+                <select id="tipoBusca">
+                    <option value="os">Nº O.S.</option>
+                    <option value="setor">Setor</option>
+                    <option value="empresa">Terceirizada</option>
+                    <option value="status">Status</option>
+                </select>
+                <input id="campoBusca" placeholder="Filtrar..." onkeyup="buscar()">
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Nº O.S.</th>
+                        <th>Data</th>
+                        <th>Setor</th>
+                        <th>Serviço</th>
+                        <th>Empresa</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="resultado"></tbody>
+            </table>
+        </section>
+
+        <section id="cadastro" class="section">
+            <h2 style="color: var(--accent);">Abrir Ordem de Serviço</h2>
+            <div class="form-grid">
+                <input id="os_id" placeholder="Nº da O.S. (ex: 2024-001)">
+                <input id="setor" placeholder="Setor / Localização">
+                <input id="servico" placeholder="Descrição resumida do serviço">
+                <select id="empresa">
+                    <option value="">Selecione a Terceirizada</option>
+                    <option value="Manutenção Elétrica">Manutenção Elétrica</option>
+                    <option value="Refrigeração">Refrigeração</option>
+                    <option value="Civil / Reparos">Civil / Reparos</option>
+                    <option value="TI / Redes">TI / Redes</option>
+                </select>
+            </div>
+            <button class="primary" onclick="salvar()">Registrar O.S.</button>
+        </section>
+    </main>
+</div>
+
+<script>
+// SUBSTITUA PELO SEU LINK DA API DO SHEETDB
+const API = "https://sheetdb.io/api/v1/pyn96szziv9xf";
+
+function toggleMenu() { document.getElementById("menu").classList.toggle("closed"); }
+
+function mostrar(id, btn) {
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    document.querySelectorAll("aside button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    if (window.innerWidth <= 768) toggleMenu();
+}
+
+async function buscar() {
+    const tipo = document.getElementById('tipoBusca').value;
+    const termo = document.getElementById('campoBusca').value;
+    const tabelaCorpo = document.getElementById('resultado');
+    
+    let url = API;
+    if (termo) url += `/search?${tipo}=*${encodeURIComponent(termo)}*`;
+
+    try {
+        const r = await fetch(url);
+        const dados = await r.json();
+        tabelaCorpo.innerHTML = "";
+
+        dados.reverse().forEach(i => { // reverse() para ver as mais recentes primeiro
+            tabelaCorpo.innerHTML += `
+            <tr>
+                <td><span class="badge status-${i.status}">${i.status}</span></td>
+                <td style="color:var(--accent); font-weight:bold;">${i.os}</td>
+                <td>${i.data}</td>
+                <td>${i.setor}</td>
+                <td>${i.servico}</td>
+                <td>${i.empresa}</td>
+                <td>
+                    ${i.status === 'ABERTO' ? `<button class="btn-action btn-finish" onclick="finalizar('${i.os}')" title="Finalizar O.S.">✅</button>` : ''}
+                    <button class="btn-action btn-del" onclick="excluir('${i.os}')" title="Excluir">🗑️</button>
+                </td>
+            </tr>`;
+        });
+    } catch(e) { console.error("Erro ao carregar dados"); }
+}
+
+async function salvar() {
+    const dados = {
+        os: document.getElementById('os_id').value.toUpperCase().trim(),
+        data: new Date().toLocaleDateString('pt-BR'),
+        setor: document.getElementById('setor').value.toUpperCase().trim(),
+        servico: document.getElementById('servico').value.trim(),
+        empresa: document.getElementById('empresa').value,
+        status: "ABERTO"
+    };
+
+    if (!dados.os || !dados.setor || !dados.empresa) {
+        alert("Preencha os campos obrigatórios.");
+        return;
+    }
+
+    try {
+        await fetch(API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: [dados] })
+        });
+        
+        // Limpar campos
+        document.getElementById('os_id').value = "";
+        document.getElementById('setor').value = "";
+        document.getElementById('servico').value = "";
+        document.getElementById('empresa').value = "";
+
+        alert("O.S. Aberta com sucesso!");
+        mostrar('pesquisa', document.querySelector('aside button'));
+        buscar();
+    } catch(e) { alert("Erro ao salvar."); }
+}
+
+async function finalizar(os_num) {
+    if (!confirm(`Confirmar finalização da O.S. ${os_num}?`)) return;
+    
+    try {
+        // O SheetDB usa PATCH para atualizar um campo específico baseado em uma busca
+        await fetch(`${API}/os/${os_num}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: { status: "FINALIZADO" } })
+        });
+        buscar();
+    } catch(e) { alert("Erro ao finalizar O.S."); }
+}
+
+async function excluir(os_num) {
+    if (!confirm(`Deseja realmente apagar a O.S. ${os_num}?`)) return;
+    try {
+        await fetch(`${API}/os/${os_num}`, { method: "DELETE" });
+        buscar();
+    } catch(e) { alert("Erro ao excluir."); }
+}
+
+// Inicia buscando os dados
+buscar();
+</script>
+
+</body>
+</html>
