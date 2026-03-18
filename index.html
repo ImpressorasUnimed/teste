@@ -757,7 +757,7 @@ async function salvarOuAtualizar() {
                 body: JSON.stringify({ data: [dados] })
             });
 
-            if (!resp.ok) throw new Error(`Falha ao cadastrar.${resp}`);
+            if (!resp.ok) throw new Error(`Falha ao cadastrar.${JSON.stringify(resp)}`);
 
             mostrarMensagem(mensagemCadastro, "O.S. aberta com sucesso.", "success-msg");
             prepararModoCadastro();
