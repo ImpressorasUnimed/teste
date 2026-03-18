@@ -769,7 +769,7 @@ async function salvarOuAtualizar() {
         mostrarMensagem(mensagemCadastro, "Atualizando O.S...", "loading");
 
         const resp = await fetch(`${API}/os/${encodeURIComponent(osOriginalEdicao)}`, {
-            method: "PATCH",
+            method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 data: {
