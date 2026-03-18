@@ -5,6 +5,11 @@
     <title>Gestão de O.S. - Terceirizadas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- Bibliotecas para exportação -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         :root {
             --bg: #002b36;
@@ -14,6 +19,8 @@
             --text: #fbfbfb;
             --success: #00ff6a;
             --warning: #ffcc00;
+            --danger: #ff4d4d;
+            --info: #3fa9f5;
         }
 
         * { box-sizing: border-box; }
@@ -31,7 +38,7 @@
             position: fixed;
             inset: 0;
             background: url('https://i.imgur.com/GMkHUDl.jpeg') center/cover no-repeat;
-            filter: blur(8px); 
+            filter: blur(8px);
             transform: scale(1.1);
             z-index: -2;
         }
@@ -39,7 +46,7 @@
         .overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.72);
             z-index: -1;
         }
 
@@ -55,10 +62,25 @@
             z-index: 10;
         }
 
-        .menu-btn { font-size: 30px; cursor: pointer; color: var(--accent); }
-        .logo { height: 70px; }
+        .menu-btn {
+            font-size: 30px;
+            cursor: pointer;
+            color: var(--accent);
+            user-select: none;
+        }
 
-        .layout { display: flex; height: calc(100vh - 110px); position: relative; z-index: 5; }
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .layout {
+            display: flex;
+            height: calc(100vh - 110px);
+            position: relative;
+            z-index: 5;
+        }
 
         aside {
             width: 260px;
@@ -83,23 +105,40 @@
             cursor: pointer;
             text-align: left;
             transition: 0.2s;
+            font-size: 14px;
         }
 
-        aside button.active, aside button:hover {
+        aside button.active,
+        aside button:hover {
             background: var(--accent);
             color: #000;
             font-weight: bold;
         }
 
-        main { flex: 1; padding: 30px; overflow-y: auto; }
-        .section { display: none; max-width: 1200px; margin: 0 auto; }
+        main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+            max-width: 1350px;
+            margin: 0 auto;
+        }
+
         .section.active { display: block; }
+
+        h2 {
+            margin-top: 0;
+            color: var(--accent);
+        }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         input, select {
@@ -109,56 +148,234 @@
             border-radius: 10px;
             color: var(--text);
             outline: none;
+            width: 100%;
+        }
+
+        input::placeholder { color: rgba(255,255,255,0.6); }
+
+        button.primary, button.secondary {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
         }
 
         button.primary {
-            padding: 16px 40px;
             background: var(--accent);
-            border: none;
-            border-radius: 12px;
             color: #000;
+        }
+
+        button.secondary {
+            background: rgba(255,255,255,0.12);
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        button.primary:hover,
+        button.secondary:hover {
+            transform: translateY(-1px);
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .card .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 8px;
+        }
+
+        .card .value {
+            font-size: 30px;
             font-weight: bold;
-            cursor: pointer;
+        }
+
+        .card.total .value { color: #fff; }
+        .card.abertas .value { color: var(--warning); }
+        .card.finalizadas .value { color: var(--success); }
+        .card.hoje .value { color: var(--info); }
+
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 15px;
         }
 
         table {
             width: 100%;
+            min-width: 1050px;
             border-collapse: collapse;
             background: rgba(0, 0, 0, 0.6);
             border-radius: 15px;
             overflow: hidden;
-            margin-top: 20px;
         }
 
-        th, td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; }
-        th { background: rgba(0, 0, 0, 0.8); color: var(--accent); font-size: 13px; }
+        th, td {
+            padding: 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: left;
+            vertical-align: middle;
+        }
 
-        /* Estilos de Status */
+        th {
+            background: rgba(0, 0, 0, 0.82);
+            color: var(--accent);
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        tr:hover td {
+            background: rgba(255,255,255,0.03);
+        }
+
         .badge {
-            padding: 5px 10px;
+            display: inline-block;
+            padding: 6px 10px;
             border-radius: 6px;
             font-size: 11px;
             font-weight: bold;
+            letter-spacing: .4px;
         }
+
         .status-ABERTO { background: var(--warning); color: #000; }
         .status-FINALIZADO { background: var(--success); color: #000; }
+        .status-default { background: #999; color: #000; }
 
         .btn-action {
-            padding: 6px;
+            padding: 7px 10px;
             margin-right: 5px;
             border-radius: 6px;
             cursor: pointer;
             border: 1px solid;
             background: transparent;
+            transition: 0.2s;
+            font-size: 13px;
         }
-        .btn-finish { border-color: var(--success); color: var(--success); }
-        .btn-finish:hover { background: var(--success); color: #000; }
-        .btn-del { border-color: #ff4d4d; color: #ff4d4d; }
-        .btn-del:hover { background: #ff4d4d; color: #fff; }
 
+        .btn-edit {
+            border-color: var(--info);
+            color: var(--info);
+        }
+        .btn-edit:hover {
+            background: var(--info);
+            color: #000;
+        }
+
+        .btn-finish {
+            border-color: var(--success);
+            color: var(--success);
+        }
+        .btn-finish:hover {
+            background: var(--success);
+            color: #000;
+        }
+
+        .btn-del {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .btn-del:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .msg-box {
+            margin-top: 15px;
+            padding: 14px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255,255,255,0.08);
+            display: none;
+        }
+
+        .msg-box.show { display: block; }
+        .loading { color: var(--warning); }
+        .error { color: #ff9191; }
+        .success-msg { color: var(--success); }
+        .empty { color: #ddd; }
+
+        .form-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .mode-badge {
+            font-size: 12px;
+            background: rgba(244,121,32,0.15);
+            border: 1px solid rgba(244,121,32,0.5);
+            color: var(--accent);
+            border-radius: 20px;
+            padding: 6px 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            html, body { overflow: auto; }
+
+            header {
+                height: 90px;
+                padding: 0 15px;
+            }
+
+            .layout {
+                height: auto;
+                min-height: calc(100vh - 90px);
+            }
+
+            aside {
+                position: fixed;
+                top: 90px;
+                left: 0;
+                height: calc(100vh - 90px);
+                z-index: 50;
+                box-shadow: 10px 0 30px rgba(0,0,0,0.4);
+            }
+
+            main {
+                padding: 20px 15px;
+                width: 100%;
+            }
+
+            .title { font-size: 18px; }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .top-actions {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
-
 <body>
 
 <div class="background"></div>
@@ -166,163 +383,530 @@
 
 <header>
     <div class="menu-btn" onclick="toggleMenu()">☰</div>
-    <div style="font-size: 20px; font-weight: bold; color: var(--accent);">GESTOR O.S. PRO</div>
+    <div class="title">GESTOR O.S. PRO</div>
 </header>
 
 <div class="layout">
     <aside id="menu" class="closed">
         <button class="active" onclick="mostrar('pesquisa', this)">🔍 Consultar O.S.</button>
-        <button onclick="mostrar('cadastro', this)">➕ Nova O.S.</button>
+        <button onclick="mostrar('cadastro', this)">➕ Nova / Editar O.S.</button>
     </aside>
 
     <main>
         <section id="pesquisa" class="section active">
+            <div class="dashboard">
+                <div class="card total">
+                    <div class="label">Total de O.S.</div>
+                    <div class="value" id="cardTotal">0</div>
+                </div>
+                <div class="card abertas">
+                    <div class="label">O.S. Abertas</div>
+                    <div class="value" id="cardAbertas">0</div>
+                </div>
+                <div class="card finalizadas">
+                    <div class="label">O.S. Finalizadas</div>
+                    <div class="value" id="cardFinalizadas">0</div>
+                </div>
+                <div class="card hoje">
+                    <div class="label">Abertas Hoje</div>
+                    <div class="value" id="cardHoje">0</div>
+                </div>
+            </div>
+
             <div class="form-grid">
                 <select id="tipoBusca">
                     <option value="os">Nº O.S.</option>
                     <option value="setor">Setor</option>
                     <option value="empresa">Terceirizada</option>
                     <option value="status">Status</option>
+                    <option value="servico">Serviço</option>
                 </select>
-                <input id="campoBusca" placeholder="Filtrar..." onkeyup="buscar()">
+
+                <input id="campoBusca" placeholder="Filtrar texto..." onkeyup="aplicarFiltros()">
+                <input type="date" id="dataInicio" onchange="aplicarFiltros()">
+                <input type="date" id="dataFim" onchange="aplicarFiltros()">
             </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Status</th>
-                        <th>Nº O.S.</th>
-                        <th>Data</th>
-                        <th>Setor</th>
-                        <th>Serviço</th>
-                        <th>Empresa</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="resultado"></tbody>
-            </table>
+            <div class="top-actions">
+                <button class="secondary" onclick="limparFiltros()">Limpar filtros</button>
+                <button class="secondary" onclick="exportarExcel()">Exportar Excel</button>
+                <button class="secondary" onclick="exportarPDF()">Exportar PDF</button>
+                <button class="secondary" onclick="carregarDados()">Atualizar lista</button>
+            </div>
+
+            <div id="mensagemLista" class="msg-box"></div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Nº O.S.</th>
+                            <th>Data</th>
+                            <th>Setor</th>
+                            <th>Serviço</th>
+                            <th>Empresa</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultado"></tbody>
+                </table>
+            </div>
         </section>
 
         <section id="cadastro" class="section">
-            <h2 style="color: var(--accent);">Abrir Ordem de Serviço</h2>
+            <div class="form-title">
+                <h2 id="tituloFormulario">Abrir Ordem de Serviço</h2>
+                <span class="mode-badge" id="modoFormulario">MODO CADASTRO</span>
+            </div>
+
             <div class="form-grid">
                 <input id="os_id" placeholder="Nº da O.S.">
                 <input id="setor" placeholder="Setor">
                 <input id="servico" placeholder="Serviço">
                 <select id="empresa">
+                    <option value="">Selecione a empresa</option>
                     <option value="Empresa A">Empresa A</option>
+                    <option value="Empresa B">Empresa B</option>
+                    <option value="Empresa C">Empresa C</option>
+                </select>
+                <select id="statusForm">
+                    <option value="ABERTO">ABERTO</option>
+                    <option value="FINALIZADO">FINALIZADO</option>
                 </select>
             </div>
-            <button class="primary" onclick="salvar()">Registrar O.S.</button>
+
+            <div class="top-actions">
+                <button class="primary" id="btnSalvar" onclick="salvarOuAtualizar()">Registrar O.S.</button>
+                <button class="secondary hidden" id="btnCancelarEdicao" onclick="cancelarEdicao()">Cancelar edição</button>
+            </div>
+
+            <div id="mensagemCadastro" class="msg-box"></div>
         </section>
     </main>
 </div>
 
 <script>
-// SUBSTITUA PELO SEU LINK DA API DO SHEETDB
 const API = "https://sheetdb.io/api/v1/1bsugw0a3s2v3";
 
-function toggleMenu() { document.getElementById("menu").classList.toggle("closed"); }
+const resultado = document.getElementById("resultado");
+const mensagemLista = document.getElementById("mensagemLista");
+const mensagemCadastro = document.getElementById("mensagemCadastro");
+
+let listaOS = [];
+let listaFiltrada = [];
+let modoEdicao = false;
+let osOriginalEdicao = null;
+
+function toggleMenu() {
+    document.getElementById("menu").classList.toggle("closed");
+}
 
 function mostrar(id, btn) {
-    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active"));
     document.getElementById(id).classList.add("active");
+
     document.querySelectorAll("aside button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-    if (window.innerWidth <= 768) toggleMenu();
+
+    if (window.innerWidth <= 768) {
+        document.getElementById("menu").classList.add("closed");
+    }
 }
 
-async function buscar() {
-    const tipo = document.getElementById('tipoBusca').value;
-    const termo = document.getElementById('campoBusca').value;
-    const tabelaCorpo = document.getElementById('resultado');
-    
-    let url = API;
-    if (termo) url += `/search?${tipo}=*${encodeURIComponent(termo)}*`;
+function mostrarMensagem(el, texto, tipo = "") {
+    el.className = `msg-box show ${tipo}`.trim();
+    el.innerHTML = texto;
+}
+
+function ocultarMensagem(el) {
+    el.className = "msg-box";
+    el.innerHTML = "";
+}
+
+function escapeHtml(valor) {
+    return String(valor ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function classeStatus(status) {
+    if (status === "ABERTO") return "status-ABERTO";
+    if (status === "FINALIZADO") return "status-FINALIZADO";
+    return "status-default";
+}
+
+function normalizarTexto(texto) {
+    return String(texto || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .trim();
+}
+
+function formatarDataParaInput(dataBr) {
+    if (!dataBr || !dataBr.includes("/")) return "";
+    const [dia, mes, ano] = dataBr.split("/");
+    if (!dia || !mes || !ano) return "";
+    return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
+}
+
+function formatarDataParaBR(dataIso) {
+    if (!dataIso || !dataIso.includes("-")) return "";
+    const [ano, mes, dia] = dataIso.split("-");
+    return `${dia}/${mes}/${ano}`;
+}
+
+function dataValidaBR(dataBr) {
+    if (!dataBr || !dataBr.includes("/")) return null;
+    const [dia, mes, ano] = dataBr.split("/").map(Number);
+    if (!dia || !mes || !ano) return null;
+    return new Date(ano, mes - 1, dia);
+}
+
+function dataHojeBR() {
+    return new Date().toLocaleDateString("pt-BR");
+}
+
+function atualizarDashboard(listaBase) {
+    const total = listaBase.length;
+    const abertas = listaBase.filter(i => normalizarTexto(i.status) === "ABERTO").length;
+    const finalizadas = listaBase.filter(i => normalizarTexto(i.status) === "FINALIZADO").length;
+    const hoje = listaBase.filter(i => (i.data || "") === dataHojeBR()).length;
+
+    document.getElementById("cardTotal").textContent = total;
+    document.getElementById("cardAbertas").textContent = abertas;
+    document.getElementById("cardFinalizadas").textContent = finalizadas;
+    document.getElementById("cardHoje").textContent = hoje;
+}
+
+function renderizarTabela(lista) {
+    resultado.innerHTML = "";
+
+    if (!lista.length) {
+        mostrarMensagem(mensagemLista, "Nenhuma O.S. encontrada com os filtros aplicados.", "empty");
+        return;
+    }
+
+    ocultarMensagem(mensagemLista);
+
+    [...lista].reverse().forEach(i => {
+        const status = escapeHtml(i.status || "");
+        const os = escapeHtml(i.os || "");
+        const data = escapeHtml(i.data || "");
+        const setor = escapeHtml(i.setor || "");
+        const servico = escapeHtml(i.servico || "");
+        const empresa = escapeHtml(i.empresa || "");
+
+        resultado.innerHTML += `
+            <tr>
+                <td><span class="badge ${classeStatus(status)}">${status || "SEM STATUS"}</span></td>
+                <td style="color:var(--accent); font-weight:bold;">${os}</td>
+                <td>${data}</td>
+                <td>${setor}</td>
+                <td>${servico}</td>
+                <td>${empresa}</td>
+                <td>
+                    <button class="btn-action btn-edit" onclick="editar('${os}')" title="Editar">✏️</button>
+                    ${status === "ABERTO" ? `<button class="btn-action btn-finish" onclick="finalizar('${os}')" title="Finalizar">✅</button>` : ""}
+                    <button class="btn-action btn-del" onclick="excluir('${os}')" title="Excluir">🗑️</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function aplicarFiltros() {
+    const tipo = document.getElementById("tipoBusca").value;
+    const termo = normalizarTexto(document.getElementById("campoBusca").value);
+    const dataInicio = document.getElementById("dataInicio").value;
+    const dataFim = document.getElementById("dataFim").value;
+
+    listaFiltrada = listaOS.filter(item => {
+        const valorCampo = normalizarTexto(item[tipo] || "");
+        const passaTexto = !termo || valorCampo.includes(termo);
+
+        const dataItem = formatarDataParaInput(item.data || "");
+        const passaInicio = !dataInicio || (dataItem && dataItem >= dataInicio);
+        const passaFim = !dataFim || (dataItem && dataItem <= dataFim);
+
+        return passaTexto && passaInicio && passaFim;
+    });
+
+    renderizarTabela(listaFiltrada);
+}
+
+function limparFiltros() {
+    document.getElementById("tipoBusca").value = "os";
+    document.getElementById("campoBusca").value = "";
+    document.getElementById("dataInicio").value = "";
+    document.getElementById("dataFim").value = "";
+    listaFiltrada = [...listaOS];
+    renderizarTabela(listaFiltrada);
+}
+
+async function carregarDados() {
+    resultado.innerHTML = "";
+    mostrarMensagem(mensagemLista, "Carregando ordens de serviço...", "loading");
 
     try {
-        const r = await fetch(url);
-        const dados = await r.json();
-        tabelaCorpo.innerHTML = "";
+        const r = await fetch(API);
 
-        dados.reverse().forEach(i => { // reverse() para ver as mais recentes primeiro
-            tabelaCorpo.innerHTML += `
-            <tr>
-                <td><span class="badge status-${i.status}">${i.status}</span></td>
-                <td style="color:var(--accent); font-weight:bold;">${i.os}</td>
-                <td>${i.data}</td>
-                <td>${i.setor}</td>
-                <td>${i.servico}</td>
-                <td>${i.empresa}</td>
-                <td>
-                    ${i.status === 'ABERTO' ? `<button class="btn-action btn-finish" onclick="finalizar('${i.os}')" title="Finalizar O.S.">✅</button>` : ''}
-                    <button class="btn-action btn-del" onclick="excluir('${i.os}')" title="Excluir">🗑️</button>
-                </td>
-            </tr>`;
-        });
-    } catch(e) { console.error("Erro ao carregar dados"); }
+        if (!r.ok) throw new Error("Erro ao consultar a API.");
+
+        const dados = await r.json();
+
+        if (!Array.isArray(dados)) {
+            throw new Error("Resposta inválida da API.");
+        }
+
+        listaOS = dados.map(item => ({
+            os: item.os || "",
+            data: item.data || "",
+            setor: item.setor || "",
+            servico: item.servico || "",
+            empresa: item.empresa || "",
+            status: item.status || "ABERTO"
+        }));
+
+        atualizarDashboard(listaOS);
+        listaFiltrada = [...listaOS];
+        aplicarFiltros();
+    } catch (e) {
+        console.error(e);
+        resultado.innerHTML = "";
+        mostrarMensagem(mensagemLista, "Erro ao carregar os dados da O.S.", "error");
+    }
 }
 
-async function salvar() {
-    const dados = {
-        os: document.getElementById('os_id').value.toUpperCase().trim(),
-        data: new Date().toLocaleDateString('pt-BR'),
-        setor: document.getElementById('setor').value.toUpperCase().trim(),
-        servico: document.getElementById('servico').value.trim(),
-        empresa: document.getElementById('empresa').value,
-        status: "ABERTO"
+function prepararModoCadastro() {
+    modoEdicao = false;
+    osOriginalEdicao = null;
+
+    document.getElementById("tituloFormulario").textContent = "Abrir Ordem de Serviço";
+    document.getElementById("modoFormulario").textContent = "MODO CADASTRO";
+    document.getElementById("btnSalvar").textContent = "Registrar O.S.";
+    document.getElementById("btnCancelarEdicao").classList.add("hidden");
+
+    document.getElementById("os_id").value = "";
+    document.getElementById("setor").value = "";
+    document.getElementById("servico").value = "";
+    document.getElementById("empresa").value = "";
+    document.getElementById("statusForm").value = "ABERTO";
+
+    ocultarMensagem(mensagemCadastro);
+}
+
+function prepararModoEdicao(item) {
+    modoEdicao = true;
+    osOriginalEdicao = item.os;
+
+    document.getElementById("tituloFormulario").textContent = "Editar Ordem de Serviço";
+    document.getElementById("modoFormulario").textContent = "MODO EDIÇÃO";
+    document.getElementById("btnSalvar").textContent = "Salvar alterações";
+    document.getElementById("btnCancelarEdicao").classList.remove("hidden");
+
+    document.getElementById("os_id").value = item.os || "";
+    document.getElementById("setor").value = item.setor || "";
+    document.getElementById("servico").value = item.servico || "";
+    document.getElementById("empresa").value = item.empresa || "";
+    document.getElementById("statusForm").value = item.status || "ABERTO";
+
+    ocultarMensagem(mensagemCadastro);
+}
+
+function cancelarEdicao() {
+    prepararModoCadastro();
+}
+
+function obterDadosFormulario() {
+    return {
+        os: document.getElementById("os_id").value.toUpperCase().trim(),
+        data: dataHojeBR(),
+        setor: document.getElementById("setor").value.toUpperCase().trim(),
+        servico: document.getElementById("servico").value.trim(),
+        empresa: document.getElementById("empresa").value,
+        status: document.getElementById("statusForm").value
     };
+}
+
+async function salvarOuAtualizar() {
+    const dados = obterDadosFormulario();
 
     if (!dados.os || !dados.setor || !dados.empresa) {
-        alert("Preencha os campos obrigatórios.");
+        mostrarMensagem(mensagemCadastro, "Preencha os campos obrigatórios: Nº da O.S., Setor e Empresa.", "error");
         return;
     }
 
     try {
-        console.log('Inicio insert');
-        await fetch(API, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: [dados] })
-        });
-        
-        // Limpar campos
-        document.getElementById('os_id').value = "";
-        document.getElementById('setor').value = "";
-        document.getElementById('servico').value = "";
-        document.getElementById('empresa').value = "";
+        if (!modoEdicao) {
+            const jaExiste = listaOS.some(item => normalizarTexto(item.os) === normalizarTexto(dados.os));
+            if (jaExiste) {
+                mostrarMensagem(mensagemCadastro, "Já existe uma O.S. com esse número.", "error");
+                return;
+            }
 
-        alert("O.S. Aberta com sucesso!");
-        mostrar('pesquisa', document.querySelector('aside button'));
-        buscar();
-        console.log('Fim insert');
-    } catch(e) { alert("Erro ao salvar."); }
+            mostrarMensagem(mensagemCadastro, "Salvando nova O.S...", "loading");
+
+            const resp = await fetch(API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ data: [dados] })
+            });
+
+            if (!resp.ok) throw new Error("Falha ao cadastrar.");
+
+            mostrarMensagem(mensagemCadastro, "O.S. aberta com sucesso.", "success-msg");
+            prepararModoCadastro();
+            await carregarDados();
+            mostrar("pesquisa", document.querySelector("aside button"));
+            return;
+        }
+
+        mostrarMensagem(mensagemCadastro, "Atualizando O.S...", "loading");
+
+        const resp = await fetch(`${API}/os/${encodeURIComponent(osOriginalEdicao)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                data: {
+                    os: dados.os,
+                    data: dados.data,
+                    setor: dados.setor,
+                    servico: dados.servico,
+                    empresa: dados.empresa,
+                    status: dados.status
+                }
+            })
+        });
+
+        if (!resp.ok) throw new Error("Falha ao atualizar.");
+
+        mostrarMensagem(mensagemCadastro, "O.S. atualizada com sucesso.", "success-msg");
+        prepararModoCadastro();
+        await carregarDados();
+        mostrar("pesquisa", document.querySelector("aside button"));
+    } catch (e) {
+        console.error(e);
+        mostrarMensagem(mensagemCadastro, "Erro ao salvar a O.S.", "error");
+    }
+}
+
+function editar(osNumero) {
+    const item = listaOS.find(i => String(i.os) === String(osNumero));
+    if (!item) {
+        alert("O.S. não encontrada.");
+        return;
+    }
+
+    prepararModoEdicao(item);
+    mostrar("cadastro", document.querySelectorAll("aside button")[1]);
 }
 
 async function finalizar(os_num) {
     if (!confirm(`Confirmar finalização da O.S. ${os_num}?`)) return;
-    
+
     try {
-        // O SheetDB usa PATCH para atualizar um campo específico baseado em uma busca
-        await fetch(`${API}/os/${os_num}`, {
+        const resp = await fetch(`${API}/os/${encodeURIComponent(os_num)}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ data: { status: "FINALIZADO" } })
         });
-        buscar();
-    } catch(e) { alert("Erro ao finalizar O.S."); }
+
+        if (!resp.ok) throw new Error("Falha ao finalizar.");
+
+        await carregarDados();
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao finalizar O.S.");
+    }
 }
 
 async function excluir(os_num) {
     if (!confirm(`Deseja realmente apagar a O.S. ${os_num}?`)) return;
+
     try {
-        await fetch(`${API}/os/${os_num}`, { method: "DELETE" });
-        buscar();
-    } catch(e) { alert("Erro ao excluir."); }
+        const resp = await fetch(`${API}/os/${encodeURIComponent(os_num)}`, {
+            method: "DELETE"
+        });
+
+        if (!resp.ok) throw new Error("Falha ao excluir.");
+
+        await carregarDados();
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao excluir.");
+    }
 }
 
-// Inicia buscando os dados
-buscar();
+function exportarExcel() {
+    try {
+        const dados = listaFiltrada.map(item => ({
+            "Status": item.status,
+            "Nº O.S.": item.os,
+            "Data": item.data,
+            "Setor": item.setor,
+            "Serviço": item.servico,
+            "Empresa": item.empresa
+        }));
+
+        if (!dados.length) {
+            alert("Não há dados para exportar.");
+            return;
+        }
+
+        const ws = XLSX.utils.json_to_sheet(dados);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Ordens de Serviço");
+        XLSX.writeFile(wb, "ordens_de_servico.xlsx");
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao exportar Excel.");
+    }
+}
+
+function exportarPDF() {
+    try {
+        if (!listaFiltrada.length) {
+            alert("Não há dados para exportar.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("l", "mm", "a4");
+
+        doc.setFontSize(14);
+        doc.text("Relatório de Ordens de Serviço", 14, 15);
+
+        const linhas = listaFiltrada.map(item => [
+            item.status || "",
+            item.os || "",
+            item.data || "",
+            item.setor || "",
+            item.servico || "",
+            item.empresa || ""
+        ]);
+
+        doc.autoTable({
+            startY: 22,
+            head: [["Status", "Nº O.S.", "Data", "Setor", "Serviço", "Empresa"]],
+            body: linhas,
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [244, 121, 32] }
+        });
+
+        doc.save("ordens_de_servico.pdf");
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao exportar PDF.");
+    }
+}
+
+prepararModoCadastro();
+carregarDados();
 </script>
 
 </body>
