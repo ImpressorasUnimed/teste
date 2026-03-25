@@ -5,120 +5,128 @@
     <title>Gestão de O.S. - Terceirizadas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Bibliotecas para exportação -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
-
     <style>
         :root {
-            --bg: #002b36;
-            --card: rgba(255, 255, 255, 0.08);
+            --bg: rgb(0, 64, 26);
+            --card: rgba(255,255,255,0.08);
             --border: #000;
-            --accent: #f47920;
+            --accent: rgb(244,121,32);
             --text: #fbfbfb;
-            --success: #00ff6a;
-            --warning: #ffcc00;
-            --danger: #ff4d4d;
-            --info: #3fa9f5;
+            --success: #29d17d;
+            --warning: #ffcc33;
+            --danger: #ff4d4f;
+            --info: #48a7ff;
         }
 
         * { box-sizing: border-box; }
 
         html, body {
             margin: 0;
-            height: 100%;
+            min-height: 100%;
             font-family: 'Segoe UI', Arial, sans-serif;
             color: var(--text);
-            background-color: #073642;
-            overflow: hidden;
+            background-color: #1a1a1a;
+        }
+
+        body {
+            position: relative;
+            overflow-x: hidden;
         }
 
         .background {
             position: fixed;
             inset: 0;
             background: url('https://i.imgur.com/GMkHUDl.jpeg') center/cover no-repeat;
-            filter: blur(8px);
-            transform: scale(1.1);
             z-index: -2;
         }
 
         .overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.72);
+            background:
+                linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.75)),
+                radial-gradient(circle at top, rgba(0,64,26,0.25), rgba(0,0,0,0.65));
+            backdrop-filter: blur(4px);
             z-index: -1;
         }
 
         header {
-            height: 110px;
+            height: 85px;
             display: flex;
             align-items: center;
-            gap: 20px;
-            padding: 0 25px;
-            background: var(--bg);
-            border-bottom: 3px solid var(--accent);
-            position: relative;
-            z-index: 10;
+            gap: 18px;
+            padding: 0 22px;
+            background: rgba(0,0,0,0.45);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .menu-btn {
-            font-size: 30px;
+            font-size: 26px;
             cursor: pointer;
             color: var(--accent);
             user-select: none;
         }
 
         .title {
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--accent);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #fff;
         }
 
         .layout {
             display: flex;
-            height: calc(100vh - 110px);
-            position: relative;
-            z-index: 5;
+            min-height: calc(100vh - 85px);
         }
 
         aside {
-            width: 260px;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            border-right: 2px solid var(--border);
-            padding: 20px;
+            width: 280px;
+            background: rgba(0,0,0,0.45);
+            border-right: 1px solid rgba(255,255,255,0.08);
+            padding: 20px 14px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
-            transition: .3s;
+            gap: 10px;
+            transition: 0.3s ease;
+            backdrop-filter: blur(12px);
         }
 
-        aside.closed { margin-left: -260px; }
+        aside.closed {
+            transform: translateX(-100%);
+            position: fixed;
+            left: 0;
+            top: 85px;
+            height: calc(100vh - 85px);
+            z-index: 90;
+        }
 
         aside button {
-            padding: 16px;
-            background: var(--card);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text);
-            border-radius: 12px;
-            cursor: pointer;
+            width: 100%;
             text-align: left;
+            padding: 14px 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 600;
             transition: 0.2s;
-            font-size: 14px;
         }
 
-        aside button.active,
-        aside button:hover {
-            background: var(--accent);
-            color: #000;
-            font-weight: bold;
+        aside button:hover,
+        aside button.active {
+            background: rgba(244,121,32,0.15);
+            border-color: rgba(244,121,32,0.45);
+            color: var(--accent);
         }
 
         main {
             flex: 1;
-            padding: 30px;
-            overflow-y: auto;
+            padding: 24px;
         }
 
         .section {
@@ -338,15 +346,12 @@
         }
 
         @media (max-width: 768px) {
-            html, body { overflow: auto; }
-
             header {
                 height: 90px;
                 padding: 0 15px;
             }
 
             .layout {
-                height: auto;
                 min-height: calc(100vh - 90px);
             }
 
@@ -357,6 +362,10 @@
                 height: calc(100vh - 90px);
                 z-index: 50;
                 box-shadow: 10px 0 30px rgba(0,0,0,0.4);
+            }
+
+            aside.closed {
+                transform: translateX(-100%);
             }
 
             main {
@@ -373,6 +382,10 @@
             .top-actions {
                 flex-direction: column;
             }
+
+            table {
+                min-width: 900px;
+            }
         }
     </style>
 </head>
@@ -387,7 +400,7 @@
 </header>
 
 <div class="layout">
-    <aside id="menu" class="closed">
+    <aside id="menu">
         <button class="active" onclick="mostrar('pesquisa', this)">🔍 Consultar O.S.</button>
         <button onclick="mostrar('cadastro', this)">➕ Nova / Editar O.S.</button>
     </aside>
@@ -414,7 +427,7 @@
             </div>
 
             <div class="form-grid">
-                <select id="tipoBusca">
+                <select id="tipoBusca" onchange="aplicarFiltros()">
                     <option value="os">Nº O.S.</option>
                     <option value="setor">Setor</option>
                     <option value="empresa">Terceirizada</option>
@@ -486,8 +499,18 @@
     </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+
 <script>
 const API = "https://sheetdb.io/api/v1/1bsugw0a3s2v3";
+
+/*
+Se sua API do SheetDB exigir autenticação, preencha o token abaixo.
+Se não usar token, deixe vazio.
+*/
+const SHEETDB_TOKEN = "";
 
 const resultado = document.getElementById("resultado");
 const mensagemLista = document.getElementById("mensagemLista");
@@ -497,6 +520,18 @@ let listaOS = [];
 let listaFiltrada = [];
 let modoEdicao = false;
 let osOriginalEdicao = null;
+
+function getHeaders() {
+    const headers = {
+        "Content-Type": "application/json"
+    };
+
+    if (SHEETDB_TOKEN) {
+        headers["Authorization"] = `Bearer ${SHEETDB_TOKEN}`;
+    }
+
+    return headers;
+}
 
 function toggleMenu() {
     document.getElementById("menu").classList.toggle("closed");
@@ -554,19 +589,6 @@ function formatarDataParaInput(dataBr) {
     return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
 }
 
-function formatarDataParaBR(dataIso) {
-    if (!dataIso || !dataIso.includes("-")) return "";
-    const [ano, mes, dia] = dataIso.split("-");
-    return `${dia}/${mes}/${ano}`;
-}
-
-function dataValidaBR(dataBr) {
-    if (!dataBr || !dataBr.includes("/")) return null;
-    const [dia, mes, ano] = dataBr.split("/").map(Number);
-    if (!dia || !mes || !ano) return null;
-    return new Date(ano, mes - 1, dia);
-}
-
 function dataHojeBR() {
     return new Date().toLocaleDateString("pt-BR");
 }
@@ -594,25 +616,27 @@ function renderizarTabela(lista) {
     ocultarMensagem(mensagemLista);
 
     [...lista].reverse().forEach(i => {
-        const status = escapeHtml(i.status || "");
+        const statusRaw = i.status || "";
+        const status = escapeHtml(statusRaw);
         const os = escapeHtml(i.os || "");
         const data = escapeHtml(i.data || "");
         const setor = escapeHtml(i.setor || "");
         const servico = escapeHtml(i.servico || "");
         const empresa = escapeHtml(i.empresa || "");
+        const osSeguro = JSON.stringify(String(i.os || ""));
 
         resultado.innerHTML += `
             <tr>
-                <td><span class="badge ${classeStatus(status)}">${status || "SEM STATUS"}</span></td>
+                <td><span class="badge ${classeStatus(normalizarTexto(statusRaw))}">${status || "SEM STATUS"}</span></td>
                 <td style="color:var(--accent); font-weight:bold;">${os}</td>
                 <td>${data}</td>
                 <td>${setor}</td>
                 <td>${servico}</td>
                 <td>${empresa}</td>
                 <td>
-                    <button class="btn-action btn-edit" onclick="editar('${os}')" title="Editar">✏️</button>
-                    ${status === "ABERTO" ? `<button class="btn-action btn-finish" onclick="finalizar('${os}')" title="Finalizar">✅</button>` : ""}
-                    <button class="btn-action btn-del" onclick="excluir('${os}')" title="Excluir">🗑️</button>
+                    <button class="btn-action btn-edit" onclick='editar(${osSeguro})' title="Editar">✏️</button>
+                    ${normalizarTexto(statusRaw) === "ABERTO" ? `<button class="btn-action btn-finish" onclick='finalizar(${osSeguro})' title="Finalizar">✅</button>` : ""}
+                    <button class="btn-action btn-del" onclick='excluir(${osSeguro})' title="Excluir">🗑️</button>
                 </td>
             </tr>
         `;
@@ -637,6 +661,7 @@ function aplicarFiltros() {
     });
 
     renderizarTabela(listaFiltrada);
+    atualizarDashboard(listaFiltrada);
 }
 
 function limparFiltros() {
@@ -646,6 +671,7 @@ function limparFiltros() {
     document.getElementById("dataFim").value = "";
     listaFiltrada = [...listaOS];
     renderizarTabela(listaFiltrada);
+    atualizarDashboard(listaFiltrada);
 }
 
 async function carregarDados() {
@@ -653,8 +679,12 @@ async function carregarDados() {
     mostrarMensagem(mensagemLista, "Carregando ordens de serviço...", "loading");
 
     try {
-        const r = await fetch(API);
+        const r = await fetch(API, {
+            method: "GET",
+            headers: getHeaders()
+        });
 
+        if (r.status === 401) throw new Error("401");
         if (!r.ok) throw new Error("Erro ao consultar a API.");
 
         const dados = await r.json();
@@ -672,13 +702,20 @@ async function carregarDados() {
             status: item.status || "ABERTO"
         }));
 
-        atualizarDashboard(listaOS);
         listaFiltrada = [...listaOS];
         aplicarFiltros();
     } catch (e) {
         console.error(e);
-        resultado.innerHTML = "";
-        mostrarMensagem(mensagemLista, "Erro ao carregar os dados da O.S.", "error");
+
+        if (e.message === "401") {
+            mostrarMensagem(
+                mensagemLista,
+                "Erro 401: sua API do SheetDB está protegida, inválida ou exige autenticação/token.",
+                "error"
+            );
+        } else {
+            mostrarMensagem(mensagemLista, "Erro ao carregar os dados da O.S.", "error");
+        }
     }
 }
 
@@ -753,15 +790,16 @@ async function salvarOuAtualizar() {
 
             const resp = await fetch(API, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: getHeaders(),
                 body: JSON.stringify({ data: [dados] })
             });
 
-            if (!resp.ok) throw new Error(`Falha ao cadastrar.${JSON.stringify(resp)}`);
+            if (resp.status === 401) throw new Error("401");
+            if (!resp.ok) throw new Error("Falha ao cadastrar.");
 
             mostrarMensagem(mensagemCadastro, "O.S. aberta com sucesso.", "success-msg");
-            prepararModoCadastro();
             await carregarDados();
+            prepararModoCadastro();
             mostrar("pesquisa", document.querySelector("aside button"));
             return;
         }
@@ -769,8 +807,8 @@ async function salvarOuAtualizar() {
         mostrarMensagem(mensagemCadastro, "Atualizando O.S...", "loading");
 
         const resp = await fetch(`${API}/os/${encodeURIComponent(osOriginalEdicao)}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: "PATCH",
+            headers: getHeaders(),
             body: JSON.stringify({
                 data: {
                     os: dados.os,
@@ -783,20 +821,27 @@ async function salvarOuAtualizar() {
             })
         });
 
+        if (resp.status === 401) throw new Error("401");
         if (!resp.ok) throw new Error("Falha ao atualizar.");
 
         mostrarMensagem(mensagemCadastro, "O.S. atualizada com sucesso.", "success-msg");
-        prepararModoCadastro();
         await carregarDados();
+        prepararModoCadastro();
         mostrar("pesquisa", document.querySelector("aside button"));
     } catch (e) {
         console.error(e);
-        mostrarMensagem(mensagemCadastro, "Erro ao salvar a O.S.", "error");
+
+        if (e.message === "401") {
+            mostrarMensagem(mensagemCadastro, "Erro 401: verifique a autenticação da API do SheetDB.", "error");
+        } else {
+            mostrarMensagem(mensagemCadastro, "Erro ao salvar a O.S.", "error");
+        }
     }
 }
 
 function editar(osNumero) {
     const item = listaOS.find(i => String(i.os) === String(osNumero));
+
     if (!item) {
         alert("O.S. não encontrada.");
         return;
@@ -812,16 +857,21 @@ async function finalizar(os_num) {
     try {
         const resp = await fetch(`${API}/os/${encodeURIComponent(os_num)}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: { status: "FINALIZADO" } })
+            headers: getHeaders(),
+            body: JSON.stringify({
+                data: { status: "FINALIZADO" }
+            })
         });
 
+        if (resp.status === 401) throw new Error("401");
         if (!resp.ok) throw new Error("Falha ao finalizar.");
 
         await carregarDados();
     } catch (e) {
         console.error(e);
-        alert("Erro ao finalizar O.S.");
+        alert(e.message === "401"
+            ? "Erro 401: verifique a autenticação da API."
+            : "Erro ao finalizar O.S.");
     }
 }
 
@@ -830,15 +880,19 @@ async function excluir(os_num) {
 
     try {
         const resp = await fetch(`${API}/os/${encodeURIComponent(os_num)}`, {
-            method: "DELETE"
+            method: "DELETE",
+            headers: getHeaders()
         });
 
+        if (resp.status === 401) throw new Error("401");
         if (!resp.ok) throw new Error("Falha ao excluir.");
 
         await carregarDados();
     } catch (e) {
         console.error(e);
-        alert("Erro ao excluir.");
+        alert(e.message === "401"
+            ? "Erro 401: verifique a autenticação da API."
+            : "Erro ao excluir.");
     }
 }
 
